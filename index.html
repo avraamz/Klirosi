@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Κλήρωση μαθητών</title>
+<meta name="theme-color" content="#17402f">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* VOICE: σχολική τάξη, καθαρό και ευανάγνωστο από το τελευταίο θρανίο
+   IDEA: ο πράσινος πίνακας· το όνομα γράφεται με κιμωλία στη μέση
+   PICTURE: το ίδιο το όνομα που κληρώθηκε, τεράστιο, είναι η εικόνα
+   COLOUR+TYPE: πράσινο πίνακα, λευκό κιμωλίας, κίτρινη κιμωλία για το κουμπί· Commissioner
+   LAYOUT: μία οθόνη χωρίς κύλιση, δουλεύει και σε μικρό αναδυόμενο παράθυρο */
+:root{color-scheme:dark;--bg:#17402f;--bg2:#103324;--ink:#f4f1e6;--dim:#b9cdbf;--line:#3c6a55;--acc:#ffd84a;--accink:#2a2300;--bad:#ff9d8a}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Roboto","Noto Sans","SamsungOne",system-ui,sans-serif;overflow:hidden;display:flex;flex-direction:column;
+ background-image:radial-gradient(ellipse at 30% 20%,#1e4f3b 0,transparent 60%),radial-gradient(ellipse at 80% 90%,var(--bg2) 0,transparent 55%)}
+button,select,input,textarea{font:inherit;color:inherit}
+button,select{min-height:44px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg2);padding:0 14px;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,#card:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+header,footer{display:flex;gap:8px;align-items:center;padding:8px max(2vw,10px);flex-wrap:wrap}
+header select{font-weight:800;font-size:18px;flex:1 1 120px;max-width:320px}
+header .sp{flex:1 1 0}
+#card{flex:1 1 0;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 3vw;border:0;background:none;border-radius:0;width:100%;cursor:pointer}
+#name{font-weight:800;line-height:1.05;font-size:min(13vw,30vh);overflow-wrap:anywhere;text-wrap:balance;text-shadow:0 0 1px #fff8,3px 3px 0 #0003}
+#name.long{font-size:min(9vw,24vh)}
+#name.roll{color:var(--dim);text-shadow:none}
+#name.pop{animation:pop .35s ease-out}
+@keyframes pop{from{transform:scale(.7);opacity:.3}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){#name.pop{animation:none}}
+#note{color:var(--dim);font-size:clamp(14px,2.2vw,20px);min-height:1.5em;margin-top:.4em}
+#go{flex:1 1 200px;min-height:60px;font-size:clamp(20px,3.4vw,30px);font-weight:800;background:var(--acc);color:var(--accink);border-color:var(--acc)}
+#go:active{transform:translateY(2px)}
+#left{color:var(--dim);font-size:14px;white-space:nowrap}
+@media(max-height:380px){header,footer{padding:4px 8px}#go{min-height:46px;font-size:20px}#note{display:none}}
+dialog{background:var(--bg2);color:var(--ink);border:1.5px solid var(--line);border-radius:14px;padding:0;width:min(640px,94vw);max-height:92vh}
+dialog::backdrop{background:#0009}
+.dh{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg2)}
+.dh h2{font-size:20px;margin:0;flex:1}
+.db{padding:14px;display:grid;gap:12px}
+h3{font-size:16px;margin:10px 0 0;color:var(--acc)}
+label{display:grid;gap:4px;font-size:14px;color:var(--dim)}
+label.row{display:flex;align-items:center;gap:10px;color:var(--ink);font-size:16px;min-height:44px}
+input[type=text],textarea,dialog select{background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px;font-size:16px;color:var(--ink);width:100%}
+input[type=checkbox]{width:24px;height:24px;accent-color:var(--acc)}
+input[type=range]{width:100%;accent-color:var(--acc);min-height:44px}
+textarea{min-height:170px;resize:vertical;line-height:1.4}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.pri{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:800}
+.warn{color:var(--bad)}
+.hint{font-size:14px;color:var(--dim);margin:0}
+#list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+#list button{text-align:left;padding:8px 12px;line-height:1.2}
+#list .d{text-decoration:line-through;color:var(--dim)}
+#list .a{opacity:.5;border-style:dashed}
+#list small{display:block;font-size:13px;color:var(--dim)}
+</style>
+</head>
+<body>
+<header>
+  <select id="cls" aria-label="Τμήμα"></select>
+  <span class="sp"></span>
+  <button id="bList">Ονόματα</button>
+  <button id="bSet">Ρυθμίσεις</button>
+</header>
+
+<button id="card" aria-label="Κλήρωση">
+  <div id="name" aria-live="polite">Έτοιμοι;</div>
+  <div id="note">Πάτα «Κλήρωση» ή άγγιξε εδώ</div>
+</button>
+
+<footer>
+  <button id="undo" title="Ξαναβάζει το τελευταίο όνομα στην κληρωτίδα">Αναίρεση</button>
+  <button id="go">Κλήρωση</button>
+  <button id="again" title="Ακούγεται ξανά το όνομα">Ξανά ήχος</button>
+  <span id="left"></span>
+</footer>
+
+<dialog id="dList">
+  <div class="dh"><h2 id="lt">Ονόματα</h2><button id="reset">Νέος γύρος</button><button data-x>Κλείσιμο</button></div>
+  <div class="db">
+    <p class="hint">Άγγιξε ένα όνομα για να το σημειώσεις απόν/απούσα σήμερα. Τα διαγραμμένα έχουν ήδη κληρωθεί σε αυτόν τον γύρο.</p>
+    <div id="list"></div>
+  </div>
+</dialog>
+
+<dialog id="dSet">
+  <div class="dh"><h2>Ρυθμίσεις</h2><button data-x>Κλείσιμο</button></div>
+  <div class="db">
+    <h3>Τμήμα και ονόματα</h3>
+    <label>Όνομα τμήματος<input type="text" id="eName" maxlength="30"></label>
+    <label>Μαθητές και μαθήτριες, ένα όνομα σε κάθε γραμμή
+      <textarea id="eNames" placeholder="Μαρία Π.&#10;Γιώργος Κ.&#10;…" spellcheck="false"></textarea></label>
+    <p class="hint">Γράψε τα ονόματα με πεζά και τόνους (Μαρία, όχι ΜΑΡΙΑ) για να προφέρονται σωστά. Αν δύο παιδιά έχουν το ίδιο όνομα, πρόσθεσε αρχικό επωνύμου.</p>
+    <div class="btns"><button class="pri" id="eSave">Αποθήκευση</button><button id="eNew">Νέο τμήμα</button><button id="eDel" class="warn">Διαγραφή τμήματος</button></div>
+    <p class="hint" id="eMsg" aria-live="polite"></p>
+
+    <h3>Κλήρωση</h3>
+    <label class="row"><input type="checkbox" id="oNr">Χωρίς επαναλήψεις μέχρι να κληρωθούν όλοι</label>
+    <label class="row"><input type="checkbox" id="oAnim">Κίνηση ονομάτων πριν το αποτέλεσμα</label>
+
+    <h3>Φωνή</h3>
+    <label class="row"><input type="checkbox" id="oSp">Να ακούγεται το όνομα</label>
+    <label>Φράση πριν το όνομα (προαιρετικά)<input type="text" id="oPre" maxlength="40" placeholder="π.χ. Σειρά έχει"></label>
+    <label>Φωνή συσκευής<select id="oVoice"></select></label>
+    <label>Ταχύτητα ομιλίας<input type="range" id="oRate" min="0.6" max="1.4" step="0.1"></label>
+    <div class="btns"><button id="oTest">Δοκιμή φωνής</button></div>
+    <p class="hint" id="vMsg"></p>
+
+    <h3>Αντίγραφο ασφαλείας</h3>
+    <p class="hint">Τα τμήματα αποθηκεύονται μόνο σε αυτή τη συσκευή και σε αυτόν τον browser. Κράτησε ένα αντίγραφο του παρακάτω κειμένου (π.χ. σε μια σημείωση) και επικόλλησέ το εδώ για επαναφορά.</p>
+    <textarea id="bk" spellcheck="false" style="min-height:90px;font-size:13px"></textarea>
+    <div class="btns"><button id="bkCopy">Αντιγραφή</button><button id="bkLoad">Επαναφορά από το κείμενο</button></div>
+    <p class="hint" id="bkMsg" aria-live="polite"></p>
+  </div>
+</dialog>
+
+<script>
+{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const K='klirosi-v1';
+const uid=()=>Math.random().toString(36).slice(2,9);
+const fresh=()=>({cur:0,o:{nr:true,anim:true,sp:true,pre:'',rate:1,voice:''},sample:true,c:[
+ {id:uid(),n:'Α1 (δείγμα)',s:['Μαρία Π.','Γιώργος Κ.','Ελένη Δ.','Νίκος Α.','Κατερίνα Μ.','Δημήτρης Σ.','Σοφία Τ.','Κώστας Β.','Άννα Λ.','Παναγιώτης Ζ.'],d:[],a:[]},
+ {id:uid(),n:'Β2 (δείγμα)',s:['Χριστίνα Ρ.','Αλέξανδρος Γ.','Ιωάννα Φ.','Θοδωρής Ν.','Βασιλική Χ.','Στέλιος Ε.','Δέσποινα Κ.','Μιχάλης Π.'],d:[],a:[]}]});
+const valid=x=>x&&Array.isArray(x.c)&&x.c.length&&x.c.every(c=>typeof c.n==='string'&&Array.isArray(c.s));
+const norm=x=>{x.o=Object.assign(fresh().o,x.o||{});x.c.forEach(c=>{c.id=c.id||uid();c.s=c.s.map(String);c.d=Array.isArray(c.d)?c.d:[];c.a=Array.isArray(c.a)?c.a:[]});x.cur=Math.min(Math.max(0,x.cur|0),x.c.length-1);return x};
+let S;
+try{const j=JSON.parse(localStorage.getItem(K));S=valid(j)?norm(j):fresh()}catch(e){S=fresh()}
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const cur=()=>S.c[S.cur];
+let busy=false,last=null,lastName='',delArm=false;
+
+/* ---------- φωνή ---------- */
+const synth=window.speechSynthesis||null;
+let voices=[];
+const loadVoices=()=>{if(!synth)return;voices=synth.getVoices().filter(v=>/^el/i.test(v.lang));fillVoices()};
+if(synth){loadVoices();try{synth.addEventListener('voiceschanged',loadVoices)}catch(e){}}
+function fillVoices(){
+  $('oVoice').innerHTML='<option value="">Αυτόματη (ελληνικά)</option>'+voices.map(v=>`<option value="${esc(v.name)}"${v.name===S.o.voice?' selected':''}>${esc(v.name)}</option>`).join('');
+  $('vMsg').textContent=!synth?'Αυτός ο browser δεν υποστηρίζει εκφώνηση. Δοκίμασε Chrome ή Samsung Internet.':
+   (synth&&!voices.length?'Αν δεν ακούγεται ελληνική φωνή: Ρυθμίσεις tablet → Γενική διαχείριση → Κείμενο σε ομιλία, και εγκατάστησε τα Ελληνικά.':'');
+}
+function speak(text){
+  if(!text||!synth)return;
+  try{
+    const u=new SpeechSynthesisUtterance(text);u.lang='el-GR';u.rate=+S.o.rate||1;
+    const v=voices.find(v=>v.name===S.o.voice)||voices[0];if(v)u.voice=v;
+    synth.cancel();synth.speak(u);
+  }catch(e){}
+}
+const say=n=>{if(S.o.sp)speak((S.o.pre?S.o.pre.trim()+' ':'')+n)};
+
+/* ---------- οθόνη ---------- */
+function show(name,note,cls){const el=$('name');el.textContent=name;el.className=(name.length>14?'long ':'')+(cls||'');$('note').textContent=note||''}
+function render(){
+  $('cls').innerHTML=S.c.map((c,i)=>`<option value="${i}"${i===S.cur?' selected':''}>${esc(c.n)}</option>`).join('');
+  const c=cur(),act=c.s.filter(n=>!c.a.includes(n)),rem=act.filter(n=>!c.d.includes(n)).length;
+  $('left').textContent=S.o.nr?`Απομένουν ${rem} από ${act.length}`:`${act.length} ονόματα`;
+  $('undo').disabled=!last;$('again').disabled=!lastName;
+  $('lt').textContent=c.n;
+  $('list').innerHTML=c.s.length?c.s.map((n,i)=>{const a=c.a.includes(n),d=c.d.includes(n);
+    return `<button data-i="${i}" class="${a?'a':d?'d':''}" aria-pressed="${a}">${esc(n)}<small>${a?'λείπει σήμερα':d?'κληρώθηκε':'στην κληρωτίδα'}</small></button>`}).join('')
+    :'<p class="hint">Δεν υπάρχουν ονόματα. Πρόσθεσέ τα από τις Ρυθμίσεις.</p>';
+}
+function draw(){
+  if(busy||document.querySelector('dialog[open]'))return;
+  const c=cur(),act=c.s.filter(n=>!c.a.includes(n));
+  if(!act.length){show('—','Δεν υπάρχουν διαθέσιμα ονόματα σε αυτό το τμήμα');return}
+  let pool=S.o.nr?act.filter(n=>!c.d.includes(n)):act,note='';
+  if(!pool.length){c.d=[];pool=act;note='Κληρώθηκαν όλοι, ξεκινά νέος γύρος'}
+  if(pool.length>1&&lastName)pool=pool.filter(n=>n!==lastName).length?pool.filter(n=>n!==lastName):pool;
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+  const done=()=>{busy=false;if(S.o.nr)c.d.push(pick);last={id:c.id,n:pick};lastName=pick;save();render();show(pick,note,'pop');say(pick)};
+  const calm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(!S.o.anim||calm||act.length<2)return done();
+  busy=true;let k=0;const t=setInterval(()=>{show(act[Math.floor(Math.random()*act.length)],'','roll');if(++k>=14){clearInterval(t);done()}},75);
+}
+$('go').onclick=draw;$('card').onclick=draw;
+document.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!document.querySelector('dialog[open]')&&!/SELECT|BUTTON/.test(e.target.tagName)){e.preventDefault();draw()}});
+$('undo').onclick=()=>{if(!last||busy)return;const c=S.c.find(c=>c.id===last.id);if(c){const i=c.d.lastIndexOf(last.n);if(i>=0)c.d.splice(i,1)}
+  show('Έτοιμοι;',`Το όνομα «${last.n}» μπήκε ξανά στην κληρωτίδα`);last=null;lastName='';save();render()};
+$('again').onclick=()=>{if(lastName)speak((S.o.pre?S.o.pre.trim()+' ':'')+lastName)};
+$('cls').onchange=e=>{S.cur=+e.target.value;last=null;lastName='';save();render();show('Έτοιμοι;',cur().n)};
+
+/* ---------- λίστα ονομάτων ---------- */
+$('bList').onclick=()=>{render();$('dList').showModal()};
+$('list').onclick=e=>{const b=e.target.closest('button[data-i]');if(!b)return;const c=cur(),n=c.s[+b.dataset.i],i=c.a.indexOf(n);i>=0?c.a.splice(i,1):c.a.push(n);save();render()};
+$('reset').onclick=()=>{cur().d=[];last=null;save();render()};
+document.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
+
+/* ---------- ρυθμίσεις ---------- */
+function fillSet(){const c=cur();$('eName').value=c.n;$('eNames').value=c.s.join('\n');$('oNr').checked=S.o.nr;$('oAnim').checked=S.o.anim;$('oSp').checked=S.o.sp;$('oPre').value=S.o.pre;$('oRate').value=S.o.rate;
+  fillVoices();$('bk').value=JSON.stringify({c:S.c.map(c=>({n:c.n,s:c.s})),o:S.o});$('eMsg').textContent='';$('bkMsg').textContent='';delArm=false;$('eDel').textContent='Διαγραφή τμήματος'}
+$('bSet').onclick=()=>{fillSet();$('dSet').showModal()};
+$('eSave').onclick=()=>{const c=cur(),names=[...new Set($('eNames').value.split('\n').map(s=>s.trim()).filter(Boolean))];
+  c.n=$('eName').value.trim()||'Τμήμα';c.s=names;c.d=c.d.filter(n=>names.includes(n));c.a=c.a.filter(n=>names.includes(n));S.sample=false;save();render();
+  $('eNames').value=names.join('\n');$('eMsg').textContent=`Αποθηκεύτηκε: ${c.n}, ${names.length} ονόματα.`;$('bk').value=JSON.stringify({c:S.c.map(c=>({n:c.n,s:c.s})),o:S.o})};
+$('eNew').onclick=()=>{S.c.push({id:uid(),n:'Νέο τμήμα',s:[],d:[],a:[]});S.cur=S.c.length-1;last=null;lastName='';save();render();fillSet();$('eMsg').textContent='Δώσε όνομα και μαθητές και πάτα Αποθήκευση.';$('eName').focus();$('eName').select()};
+$('eDel').onclick=()=>{if(!delArm){delArm=true;$('eDel').textContent='Σίγουρα; Πάτα ξανά';return}
+  if(S.c.length<2){S.c=[{id:uid(),n:'Τμήμα',s:[],d:[],a:[]}]}else S.c.splice(S.cur,1);S.cur=0;last=null;lastName='';save();render();fillSet();show('Έτοιμοι;','')};
+$('oNr').onchange=e=>{S.o.nr=e.target.checked;save();render()};
+$('oAnim').onchange=e=>{S.o.anim=e.target.checked;save()};
+$('oSp').onchange=e=>{S.o.sp=e.target.checked;save()};
+$('oPre').oninput=e=>{S.o.pre=e.target.value;save()};
+$('oRate').oninput=e=>{S.o.rate=+e.target.value;save()};
+$('oVoice').onchange=e=>{S.o.voice=e.target.value;save()};
+$('oTest').onclick=()=>speak((S.o.pre?S.o.pre.trim()+' ':'')+(cur().s[0]||'Μαρία'));
+$('bkCopy').onclick=()=>{const done=ok=>$('bkMsg').textContent=ok?'Αντιγράφηκε.':'Επίλεξε το κείμενο και αντίγραψέ το με το χέρι.';
+  try{navigator.clipboard.writeText($('bk').value).then(()=>done(true),()=>{$('bk').select();done(false)})}catch(e){$('bk').select();done(false)}};
+$('bkLoad').onclick=()=>{try{const j=JSON.parse($('bk').value);if(!valid(j))throw 0;S=norm({c:j.c.map(c=>({n:c.n,s:c.s})),o:j.o,cur:0});last=null;lastName='';save();render();fillSet();$('bkMsg').textContent=`Έγινε επαναφορά ${S.c.length} τμημάτων.`}
+  catch(e){$('bkMsg').textContent='Το κείμενο δεν είναι έγκυρο αντίγραφο.'}};
+
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+render();
+if(S.sample)$('note').textContent='Δείγμα ονομάτων. Βάλε τα δικά σου τμήματα από τις Ρυθμίσεις.';
+}
+</script>
+</body>
+</html>
